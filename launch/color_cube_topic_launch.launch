@@ -1,0 +1,8 @@
+<launch>
+    <rosparam file="$(find tutorial_service_providor)/params/color_cube_params.yaml" />
+    <node
+        name = "Color_Cube_Node"
+        type = "color_cube_topic.py"
+        output = "screen"
+        pkg = "tutorial_service_providor" />
+</launch>
