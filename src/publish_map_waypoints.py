@@ -138,6 +138,9 @@ def load_map(path):
 #//Boston Dynamics Functions
 
 def createFudicialStampedTransformPosQuat(wo,pos,quat):
+    #Scale property is used because unity seems to downscale
+    #   everything, smooshing it together. Most optimal scale
+    #   i've seen is 10
     scale = rospy.get_param('scale',1)
     stampedTMsg = TransformStamped()
 
@@ -157,6 +160,9 @@ def createFudicialStampedTransformPosQuat(wo,pos,quat):
     return stampedTMsg
 
 def createWaypointStampedTransformQuatPos(wp,pos,quat):
+    #Scale property is used because unity seems to downscale
+    #   everything, smooshing it together. Most optimal scale
+    #   i've seen is 10
     scale = rospy.get_param('scale',1)
     stampedTMsg = TransformStamped()
 
@@ -164,10 +170,6 @@ def createWaypointStampedTransformQuatPos(wp,pos,quat):
     stampedTMsg.header.frame_id = '/base_link'
     stampedTMsg.header.stamp.secs = rospy.get_rostime().secs
     stampedTMsg.header.stamp.nsecs = rospy.get_rostime().nsecs
-
-
-
-
 
     stampedTMsg.transform.translation.x = pos.x * scale
     stampedTMsg.transform.translation.y = pos.y * scale
@@ -180,18 +182,11 @@ def createWaypointStampedTransformQuatPos(wp,pos,quat):
 
     return stampedTMsg
 
-def create_fiducial_tform(world_object,waypoint):
-    fiducial_object = world_object.apriltag_properties
-    odom_tform_fiducial_filtered = get_a_tform_b(
-        world_object.transforms_snapshot, ODOM_FRAME_NAME,
-        world_object.apriltag_properties.frame_name_fiducial_filtered)
-    waypoint_tform_odom = SE3Pose.from_obj(waypoint.waypoint_tform_ko)
-    waypoint_tform_fiducial_filtered = api_to_vtk_se3_pose(
-        waypoint_tform_odom * odom_tform_fiducial_filtered)
-    
-    return waypoint_tform_fiducial_filtered
-
 def process_graph(current_graph,current_waypoints,current_anchors,current_anchored_world_objects,current_waypoint_snapshots):
+    #Gutted version of Boston Dynamic's create_graph_objects in view_map.py
+    #   essentially loops through waypoints, creates transforms based off of their
+    #   position in reference to the seed frame, then returns an array of TransformStamped 
+    #   messages
 
     tfmsgs = []
 
@@ -221,14 +216,8 @@ def process_graph(current_graph,current_waypoints,current_anchors,current_anchor
             snapshot = current_waypoint_snapshots[curr_waypoint.snapshot_id]
             for fiducial in snapshot.objects:
                 if fiducial.HasField("apriltag_properties"):
-                    
-                    curr_wp_tform_fiducial = create_fiducial_tform(fiducial,curr_waypoint) 
-                    world_tform_fiducial = np.dot(world_tform_current_waypoint,
-                                                  vtk_to_mat(curr_wp_tform_fiducial))    
-
                     for anchor_key in current_anchored_world_objects:
                         for anchor in current_anchored_world_objects[anchor_key]:
-                        
                             if isinstance(anchor.id,str): #this should narrow it down to just fd
                                 try:
                                     tform = anchor.seed_tform_object
@@ -246,8 +235,6 @@ def process_graph(current_graph,current_waypoints,current_anchors,current_anchor
                 queue.append((current_waypoints[edge.id.to_waypoint], world_tform_to_wp))
             # If the edge is directed toward us...
             elif edge.id.to_waypoint == curr_waypoint.id and edge.id.from_waypoint not in visited:
-                current_waypoint_tform_from_waypoint = (SE3Pose.from_obj(
-                    edge.from_tform_to).inverse()).to_matrix()
                 world_tform_from_wp = np.dot(world_tform_current_waypoint, current_waypoint_tform_to_waypoint)
                 # Add the neighbor to the queue.
                 queue.append((current_waypoints[edge.id.from_waypoint], world_tform_from_wp))
@@ -260,9 +247,9 @@ def main():
                     # publish to /tf
     path = rospy.get_param('path','/mnt/hgfs/Shared Folder/downloaded_graph')
 
-
     pub = rospy.Publisher(topic,TransformStamped,queue_size=10)
 
+    #load map from path
     (current_graph, current_waypoints, current_waypoint_snapshots,
      current_anchors, current_anchored_world_objects) = load_map(path)
 
