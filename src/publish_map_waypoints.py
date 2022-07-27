@@ -136,7 +136,9 @@ def load_map(path):
                 current_anchors, current_anchored_world_objects)
 
 #//Boston Dynamics Functions
-def createFudicialStampedTransform(wo,wo_tform,quat):
+
+def createFudicialStampedTransformPosQuat(wo,pos,quat):
+    scale = rospy.get_param('scale',1)
     stampedTMsg = TransformStamped()
 
     stampedTMsg.child_frame_id = "/" + wo.name 
@@ -144,21 +146,18 @@ def createFudicialStampedTransform(wo,wo_tform,quat):
     stampedTMsg.header.stamp.secs = wo.acquisition_time.seconds
     stampedTMsg.header.stamp.nsecs = wo.acquisition_time.nanos
 
-    pos = wo_tform.GetPosition()
-
-
-    stampedTMsg.transform.translation.x = pos[0] * 10
-    stampedTMsg.transform.translation.y = pos[1] * 10
-    stampedTMsg.transform.translation.z = pos[2] * 10
+    stampedTMsg.transform.translation.x = pos.x * scale
+    stampedTMsg.transform.translation.y = pos.y * scale
+    stampedTMsg.transform.translation.z = pos.z * scale
 
     stampedTMsg.transform.rotation.x = quat.x 
-    stampedTMsg.transform.rotation.y = quat.y  
-    stampedTMsg.transform.rotation.z = quat.z  
+    stampedTMsg.transform.rotation.y = quat.y 
+    stampedTMsg.transform.rotation.z = quat.z 
     stampedTMsg.transform.rotation.w = quat.w 
     return stampedTMsg
 
-
 def createWaypointStampedTransformQuatPos(wp,pos,quat):
+    scale = rospy.get_param('scale',1)
     stampedTMsg = TransformStamped()
 
     stampedTMsg.child_frame_id = "/" + wp.annotations.name
@@ -170,9 +169,9 @@ def createWaypointStampedTransformQuatPos(wp,pos,quat):
 
 
 
-    stampedTMsg.transform.translation.x = pos.x * 10
-    stampedTMsg.transform.translation.y = pos.y * 10
-    stampedTMsg.transform.translation.z = pos.z * 10
+    stampedTMsg.transform.translation.x = pos.x * scale
+    stampedTMsg.transform.translation.y = pos.y * scale
+    stampedTMsg.transform.translation.z = pos.z * scale
 
     stampedTMsg.transform.rotation.x = quat.x 
     stampedTMsg.transform.rotation.y = quat.y  
@@ -233,7 +232,7 @@ def process_graph(current_graph,current_waypoints,current_anchors,current_anchor
                             if isinstance(anchor.id,str): #this should narrow it down to just fd
                                 try:
                                     tform = anchor.seed_tform_object
-                                    tfmsgs.append(createFudicialStampedTransform(fiducial,mat_to_vtk(world_tform_fiducial),tform.rotation))
+                                    tfmsgs.append(createFudicialStampedTransformPosQuat(fiducial,tform.position,tform.rotation))
                                 except AttributeError:
                                     pass
     
@@ -257,12 +256,10 @@ def process_graph(current_graph,current_waypoints,current_anchors,current_anchor
 
 def main():
     rospy.init_node("GraphNav Publisher")
-
-    topic = '/dumb' #This topic takes our msgs, and a different script will convert to TFmessages and
+    topic = rospy.get_param('topic','/dumb')#This topic takes our msgs, and a different script will convert to TFmessages and
                     # publish to /tf
-    path = "/mnt/hgfs/Shared Folder/downloaded_graph"
+    path = rospy.get_param('path','/mnt/hgfs/Shared Folder/downloaded_graph')
 
-    #may make topic and path ros params
 
     pub = rospy.Publisher(topic,TransformStamped,queue_size=10)
 

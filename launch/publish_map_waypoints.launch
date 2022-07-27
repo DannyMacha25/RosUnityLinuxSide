@@ -1,4 +1,7 @@
 <launch>
+    <rosparam file="$(find tutorial_service_providor)/params/publish_waypoints_params.yaml" />
+
+
     <node
     name = "converter"
     pkg = "tutorial_service_providor"
