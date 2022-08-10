@@ -13,9 +13,9 @@ def main():
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         #pubTransform('/map','/base_link',0,0,0,topic)
-        pubTransform('base_link','camera',5,1,0,topic_static)
-        pubTransform('base_link','hand',3,2,0,topic)
-        pubTransform('hand','finger',1,1,2,topic)
+        pubTransform('/base_link','/camera',5,1,0,topic_static)
+        pubTransform('/base_link','/hand',3,2,0,topic)
+        pubTransform('/hand','/finger',1,1,2,topic)
         loop.sleep()
         #rospy.spin()
         #loop.sleep()
@@ -39,7 +39,7 @@ def pubTransform(frame_id,child_id,x,y,z,top):
     trans.transform.rotation.z = 0
     trans.transform.rotation.w = 1
     br = TransformBroadcaster()
-    br.sendTransform((x,y,z),(0,0,0,1),rospy.Time.now(),child_id,frame_id)
+    br.sendTransform((x,y,z),(0,0,0,1),rospy.Time(rospy.get_rostime().secs,rospy.get_rostime().nsecs),child_id,frame_id)
 
     t.transforms.append(trans)
     pub = rospy.Publisher("/tf",tfMessage,queue_size=10)
