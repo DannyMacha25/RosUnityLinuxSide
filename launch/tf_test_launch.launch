@@ -1,0 +1,8 @@
+<launch>
+
+<node
+    name = "tfer"
+    pkg = "tutorial_service_providor"
+    type = "tf_tester.py"
+    output="screen" />
+</launch>
